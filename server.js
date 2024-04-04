@@ -2,12 +2,14 @@ const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
-
+const cors=require('cors')
 const app = express();
+const fs = require('fs');
 
 // MongoDB Atlas connection URI
 const mongoURI = 'mongodb+srv://shashisahani496:123456789ok@cluster0.lhlqwh4.mongodb.net/commentsDB';
 
+app.use(cors());
 // Create MongoDB Atlas connection
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
@@ -77,6 +79,25 @@ app.get('/posts',async(req,res)=>{
   }
 })
 
+app.delete('/posts/:id',async(req,res)=>{
+  const postId=req.params.id;
+
+  try {
+console.log(postId,"postid")
+    const deletedPost=await Post.findByIdAndDelete(postId)
+    if(!deletedPost){
+      return res.status(404).json({error:"Post not found"})
+    }
+    const imageUrlParts=deletedPost.image.split('/');
+    const imageName=imageUrlParts[imageUrlParts.length-1];
+    const imagePath=path.json(__dirname,'upload','images',imageName);
+    fs.unlinkSync(imagePath); 
+    res.join({success:true,message:"Post deleted successfully"})
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
